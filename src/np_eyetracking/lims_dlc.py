@@ -85,17 +85,19 @@ def copy_video_files_to_lims_incoming_dir(session: np_session.Session) -> None:
         np_tools.copy(f, np_session.DEFAULT_INCOMING_ROOT)
         
 def upload_video_data_to_lims(session: np_session.Session) -> None:
+    """Upload triggers DLC processing."""
     spoof_session = get_spoof_ecephys_session(session)
     session.state['spoof'] = str(spoof_session)
     logger.info('Copying video files to incoming dir.')
     copy_video_files_to_lims_incoming_dir(session)
-    logger.info('Writing platform json for spoof session in lims incoming dir. Copied video files will be specified in manifest for upload.')
+    logger.info('Writing platform json for spoof session in lims incoming dir.'
+                'Copied video files will be specified in manifest for upload.')
     write_platform_json(session, spoof_session)
     logger.info('Writing trigger file to init upload.')
     np_session.write_trigger_file(spoof_session)
     session.state['dlc_started'] = True
     
-def get_dlc_paths(session: np_session.Session) -> tuple[pathlib.Path]:
+def get_dlc_paths(session: np_session.Session) -> tuple[pathlib.Path, ...]:
     if not session.state.get('spoof') or not session.state.get('dlc_started'):
         logger.info('DLC hasn\'t been run yet: launching now')
         upload_video_data_to_lims(session)
@@ -103,9 +105,23 @@ def get_dlc_paths(session: np_session.Session) -> tuple[pathlib.Path]:
     assert spoof_session.lims_path, f'No lims path found for spoofed session {spoof_session}'
     return tuple(spoof_session.lims_path.glob('*_tracking/*'))
     
+def get_eye_tracking_paths(session: np_session.Session) -> dict[str, pathlib.Path] | None:
+    dlc_path = next((f for f in get_dlc_paths(session) if 'ellipse' in f.name), None)
+    if not dlc_path:
+        if session.state.get('dlc_started'):
+            logger.info(f'Files not ready, but DLC has been started for {session} - check back later!')
+            return
+        raise FileNotFoundError(f'No ellipse .h5 file found for {session}')
+    label_to_path = {}
+    label_to_path['raw_eye_tracking_video_meta_data'] = get_video_files(session)['eye_cam_json']
+    label_to_path['raw_eye_tracking_filepath'] = dlc_path
+    return label_to_path
+    
+def main(session: str | int | np_session.Session) -> None:
+    np_logging.getLogger()
+    print(get_eye_tracking_paths(np_session.Session(session)))
 
 if __name__ == '__main__':
     doctest.testmod(raise_on_error=False)
-    np_logging.getLogger()
-    np_session.Session('DRpilot_644864_20230201').state['dlc_started'] = False
-    get_dlc_paths(np_session.Session('DRpilot_644864_20230201'))
+    
+    main('DRpilot_644864_20230201')
