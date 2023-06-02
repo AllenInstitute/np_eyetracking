@@ -131,7 +131,12 @@ def get_sync_file_frame_times(
     session: np_session.Session,
 ) -> npt.NDArray[np.float64]:
 
-    sync_file = next(session.npexp_path.glob('*.h5'))
+    sync_file = next(
+        itertools.chain(
+            session.npexp_path.glob('*.sync'),
+            session.npexp_path.glob('*T*.h5'),
+        )
+    )
     cam_json = json.loads(
         get_video_files(session)['eye_cam_json'].read_bytes()
     )
