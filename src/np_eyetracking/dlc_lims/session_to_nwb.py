@@ -2,6 +2,7 @@ from __future__ import annotations
 import doctest
 
 from pathlib import Path
+import sys
 import tempfile
 from typing import Dict, Optional, Tuple
 
@@ -32,7 +33,7 @@ logger = np_logging.getLogger(__name__)
 def add_to_nwb(
     session: np_session.Session,
     nwb: Optional[pynwb.NWBFile] = None,
-) -> None:
+) -> pynwb.NWBFile:
 
     if nwb is None:
         logger.info('Creating new pynwb.NWBFile instance')
@@ -103,25 +104,25 @@ def add_to_nwb(
 
 
 def write_nwb_to_disk(
-    nwb_file: pynwb.NWBFile, output_path: Optional[Path] = None
+    nwb_file: pynwb.NWBFile, output_path: Optional[str | Path] = None
 ) -> None:
     if output_path is None:
-        output_path = tempfile.TemporaryFile(delete=False)
+        output_path = Path(tempfile.mkdtemp()) / f'{nwb_file.session_id}.nwb'
     with pynwb.NWBHDF5IO(output_path, mode='w') as io:
-        logger.info(f'Writing session nwb file to {output_path}')
+        logger.info(f'Writing session nwb file to { }')
         io.write(nwb_file, cache_spec=True)
 
 
 def main(
     session: str | int | np_session.Session,
-    nwb: Optional[pynwb.NWBFile] = None,
+    path: Optional[str | Path] = None,
 ) -> None:
     np_logging.getLogger()
-    session = np_session.Session(session)
-    add_to_nwb(session, nwb)
+    session = np_session.Session(str(session))
+    nwb = add_to_nwb(session)
+    write_nwb_to_disk(nwb, path)
 
 
 if __name__ == '__main__':
     doctest.testmod(raise_on_error=True)
-
-    main('DRpilot_626791_20220817')
+    main(*sys.argv[1:])

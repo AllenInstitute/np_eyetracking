@@ -13,6 +13,7 @@ import doctest
 import itertools
 import json
 import pathlib
+import sys
 from typing import Iterator
 
 import np_logging
@@ -92,6 +93,4 @@ def main(session: str | int | np_session.Session) -> None:
 
 if __name__ == '__main__':
     doctest.testmod(raise_on_error=True)
-
-    main('DRpilot_644864_20230201')
-    # main('DRpilot_626791_20220817')
+    main(str(sys.argv[1]))
