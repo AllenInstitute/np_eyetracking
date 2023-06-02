@@ -51,6 +51,7 @@ def add_to_nwb(
         )
 
     # Get necessary components
+    eye_gaze_mapping_path = None    # TODO 
     eye_tracking_rig_geometry = rig_geometry.from_session(session).dict()
     try:
         eye_dlc_ellipses_path = utils.get_eye_tracking_paths(session)[
@@ -58,8 +59,7 @@ def add_to_nwb(
         ]
     except FileNotFoundError:
         run_dlc.main(session)
-        return
-    eye_gaze_mapping_path = None
+        raise RuntimeError('DLC has been started - try adding to NWB again in a few hours')
 
     nwbfile = write_nwb.add_eye_tracking_rig_geometry_data_to_nwbfile(
         nwbfile, eye_tracking_rig_geometry
