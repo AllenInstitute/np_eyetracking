@@ -1,9 +1,7 @@
-[tool.pdm]
-
 [project]
 name = "np_eyetracking"
 version = "0.1.0"
-description = "Tools for generating eye-tracking data from for .nwb creation."
+description = "Tools for generating eye-tracking data for .nwb creation."
 authors = [
     {name = "bjhardcastle", email = "ben.hardcastle@alleninstitute.org"},
 ]
@@ -14,6 +12,11 @@ dependencies = [
 requires-python = ">=3.8"
 readme = "README.md"
 license = {text = "MIT"}
+
+[project.optional-dependencies]
+dev = [
+    "blue>=0.9.1",
+]
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
