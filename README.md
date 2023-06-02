@@ -1,3 +1,2 @@
 # np_eyetracking
-
-Tools for generating eye-tracking data for .nwb creation.
+Tools for generating eye-tracking data for non-standard Mindscope Neuropixels experiments.
