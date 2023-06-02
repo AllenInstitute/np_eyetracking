@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Session:NWB good video frames",
+            "type": "python",
+            "request": "launch",
+            "module": "np_eyetracking.dlc_lims.session_to_nwb",
+            "args": ["DRpilot_626791_20220817"],
+            "justMyCode": false
+        },
+        {
+            "name": "Session:NWB bad video frames",
+            "type": "python",
+            "request": "launch",
+            "module": "np_eyetracking.dlc_lims.session_to_nwb",
+            "args": ["DRpilot_644864_20230201"],
+            "justMyCode": false
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
