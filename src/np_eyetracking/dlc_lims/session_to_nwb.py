@@ -1,7 +1,7 @@
 from __future__ import annotations
 import doctest
 
-from pathlib import Path
+import pathlib
 import sys
 import tempfile
 from typing import Dict, Optional, Tuple
@@ -31,10 +31,12 @@ logger = np_logging.getLogger(__name__)
 
 
 def add_to_nwb(
-    session: np_session.Session,
+    session: str | pathlib.Path | np_session.Session,
     nwb: Optional[pynwb.NWBFile] = None,
 ) -> pynwb.NWBFile:
-
+    
+    session = np_session.Session(session)
+    
     if nwb is None:
         logger.info('Creating new pynwb.NWBFile instance')
         nwbfile = pynwb.NWBFile(
@@ -68,7 +70,7 @@ def add_to_nwb(
 
     eye_tracking_frame_times = utils.get_sync_file_frame_times(session)
     eye_dlc_tracking_data = read_eye_dlc_tracking_ellipses(
-        Path(eye_dlc_ellipses_path)
+        pathlib.Path(eye_dlc_ellipses_path)
     )
 
     num_sync_timestamps = len(eye_tracking_frame_times)
@@ -93,7 +95,7 @@ def add_to_nwb(
         )
 
     if eye_gaze_mapping_path is not None:
-        eye_gaze_data = read_eye_gaze_mappings(Path(eye_gaze_mapping_path))
+        eye_gaze_data = read_eye_gaze_mappings(pathlib.Path(eye_gaze_mapping_path))
     else:
         eye_gaze_data = None
 
@@ -103,26 +105,49 @@ def add_to_nwb(
     return nwbfile
 
 
+
+def load_nwb_from_disk(
+    nwb_path: str | pathlib.Path,
+    ) -> pynwb.NWBFile:
+    logger.info(f'Loading nwb file at {nwb_path}')
+    with pynwb.NWBHDF5IO(nwb_path, mode='r') as f:
+        return f.read()
+
+
 def write_nwb_to_disk(
-    nwb_file: pynwb.NWBFile, output_path: Optional[str | Path] = None
-) -> None:
+    nwb_file: pynwb.NWBFile, output_path: Optional[str | pathlib.Path] = None
+    ) -> None:
     if output_path is None:
-        output_path = Path(tempfile.mkdtemp()) / f'{nwb_file.session_id}.nwb'
-    with pynwb.NWBHDF5IO(output_path, mode='w') as io:
-        logger.info(f'Writing session nwb file to { }')
-        io.write(nwb_file, cache_spec=True)
+        output_path = pathlib.Path(tempfile.mkdtemp()) / f'{nwb_file.session_id}.nwb'
+    
+    nwb_file.set_modified()
+
+    logger.info(f'Writing nwb file `{nwb_file.session_id!r}` to {output_path}')
+    with pynwb.NWBHDF5IO(output_path, mode='w') as f:
+        f.write(nwb_file, cache_spec=True)
+    logger.debug(f'Writing complete for nwb file `{nwb_file.session_id!r}`')
 
 
 def main(
-    session: str | int | np_session.Session,
-    path: Optional[str | Path] = None,
-) -> None:
-    np_logging.getLogger()
-    session = np_session.Session(str(session))
-    nwb = add_to_nwb(session)
-    write_nwb_to_disk(nwb, path)
+    session_folder: str | pathlib.Path | np_session.Session,
+    nwb_file: str | pathlib.Path | pynwb.NWBFile,
+    output_file: Optional[str | pathlib.Path] = None,
+) -> pynwb.NWBFile:
+    
+    session = np_session.Session(session_folder)
+    
+    if not isinstance(nwb_file, pynwb.NWBFile):
+        nwb_file = load_nwb_from_disk(nwb_file)
+    
+    nwb_file = add_to_nwb(session, nwb_file)
+    
+    if output_file is not None:
+        write_nwb_to_disk(nwb_file, output_file)
+        
+    return nwb_file
 
 
 if __name__ == '__main__':
+    np_logging.getLogger()
     doctest.testmod(raise_on_error=True)
     main(*sys.argv[1:])
