@@ -1,6 +1,6 @@
 [project]
 name = "np_eyetracking"
-version = "0.1.0"
+version = "0.1.2"
 description = "Tools for generating eye-tracking data for .nwb creation."
 authors = [
     {name = "bjhardcastle", email = "ben.hardcastle@alleninstitute.org"},
